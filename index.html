@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>lox — Tr1angleTo4st</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent: #308075;
+      --accent-glow: rgba(48, 128, 117, 0.35);
+      --accent-dim: rgba(48, 128, 117, 0.12);
+      --bg: #080d0c;
+      --bg2: #0e1714;
+      --bg3: #152220;
+      --surface: #111d1b;
+      --border: rgba(48,128,117,0.2);
+      --text: #e8f0ef;
+      --muted: #7a9e98;
+      --white: #ffffff;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      padding: 0 6vw;
+    }
+
+    .hero-bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+      z-index: 0;
+    }
+
+    .hero-glow {
+      position: absolute;
+      width: 700px;
+      height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      top: 50%;
+      left: 55%;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+      filter: blur(40px);
+    }
+
+    /* diagonal slash */
+    .hero-slash {
+      position: absolute;
+      top: -100px;
+      right: 18%;
+      width: 3px;
+      height: 130vh;
+      background: linear-gradient(180deg, transparent 0%, var(--accent) 30%, var(--accent) 70%, transparent 100%);
+      opacity: 0.15;
+      transform: rotate(-12deg);
+      z-index: 0;
+    }
+    .hero-slash::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 20px;
+      width: 1px;
+      height: 100%;
+      background: inherit;
+      opacity: 0.5;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 4rem;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero-text { max-width: 620px; }
+
+    .hero-eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      display: block;
+      width: 32px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .hero-name {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: clamp(4rem, 9vw, 8rem);
+      font-weight: 700;
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      color: var(--white);
+      text-transform: lowercase;
+    }
+
+    .hero-name span {
+      display: block;
+      font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      margin-top: 0.4rem;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .hero-tagline {
+      margin-top: 1.8rem;
+      font-size: 1.05rem;
+      color: var(--muted);
+      font-weight: 400;
+      line-height: 1.65;
+      max-width: 480px;
+    }
+
+    .hero-tagline strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 2.2rem;
+    }
+
+    .badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      padding: 0.4rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .badge.hot {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* ── SKIN ── */
+    .hero-skin {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .skin-frame {
+      position: relative;
+      width: 220px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+    }
+
+    .skin-glow-ring {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 180px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent);
+      filter: blur(28px);
+      opacity: 0.45;
+    }
+
+    .skin-img {
+      image-rendering: pixelated;
+      width: 200px;
+      filter: drop-shadow(0 0 24px var(--accent-glow)) drop-shadow(0 0 6px var(--accent));
+      position: relative;
+      z-index: 1;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    /* ── SECTION ── */
+    section {
+      position: relative;
+      z-index: 1;
+      padding: 5rem 6vw;
+    }
+
+    .section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      max-width: 200px;
+    }
+
+    .section-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 2.5rem;
+    }
+
+    /* ── STATS GRID ── */
+    .stats-section { background: var(--bg2); }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      padding: 2.2rem 2rem;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.2s;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px;
+      height: 100%;
+      background: var(--accent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .stat-card:hover { background: var(--bg3); }
+    .stat-card:hover::before { opacity: 1; }
+
+    .stat-icon {
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+      opacity: 0.85;
+    }
+
+    .stat-value {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 2.6rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-top: 0.4rem;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .stat-desc {
+      font-size: 0.88rem;
+      color: var(--text);
+      margin-top: 0.8rem;
+      line-height: 1.5;
+    }
+
+    /* ── ABOUT ── */
+    .about-section { max-width: 1200px; margin: 0 auto; }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: start;
+    }
+
+    .about-bio {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+    .about-bio p + p { margin-top: 1rem; }
+    .about-bio strong { color: var(--text); font-weight: 600; }
+    .about-bio .highlight {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .skill-bars { display: flex; flex-direction: column; gap: 1.4rem; }
+
+    .skill-row {}
+
+    .skill-top {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    .skill-name {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .skill-rank {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--accent);
+    }
+    .bar-bg {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #50c4b0);
+      border-radius: 2px;
+      transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ── ACHIEVEMENTS ── */
+    .achievements-section {
+      background: var(--bg2);
+    }
+    .ach-inner { max-width: 1200px; margin: 0 auto; }
+
+    .ach-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .ach-item {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 1.6rem 1.8rem;
+      border-radius: 2px;
+      display: flex;
+      gap: 1.2rem;
+      align-items: flex-start;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .ach-item:hover {
+      border-color: var(--accent);
+      background: var(--bg3);
+    }
+
+    .ach-icon {
+      font-size: 1.6rem;
+      flex-shrink: 0;
+      width: 40px;
+      text-align: center;
+    }
+
+    .ach-text {}
+    .ach-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--white);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .ach-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+      line-height: 1.5;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 6vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-name {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .footer-copy {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── SCROLL ANIMATIONS ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ── SCANLINE accent on hero ── */
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.06) 2px,
+        rgba(0,0,0,0.06) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.6;
+    }
+
+    @media (max-width: 768px) {
+      .hero-content { grid-template-columns: 1fr; }
+      .hero-skin { display: flex; justify-content: center; order: -1; }
+      .about-grid { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 1rem; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div class="hero-bg-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-slash"></div>
+  <div class="scanlines"></div>
+
+  <div class="hero-content">
+    <div class="hero-text">
+      <p class="hero-eyebrow">Minecraft PvP Player</p>
+      <h1 class="hero-name">
+        lox
+        <span>Tr1angleTo4st</span>
+      </h1>
+      <p class="hero-tagline">
+        <strong>The best PvPer in Italian Mapping's planet.</strong><br>
+        LT4 of Sword. LT4 in CQTY. A name that ends conversations on the battlefield before they begin.
+      </p>
+      <div class="hero-badges">
+        <span class="badge hot">⚔ LT4 Sword</span>
+        <span class="badge hot">🏆 LT4 CQTY</span>
+        <span class="badge">Italian Mapping</span>
+      </div>
+    </div>
+
+    <div class="hero-skin">
+      <div class="skin-frame">
+        <div class="skin-glow-ring"></div>
+        <img class="skin-img" src="imgs/skin.png" alt="lox Minecraft skin" />
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ STATS ══ -->
+<section class="stats-section">
+  <div style="max-width:1200px;margin:0 auto;">
+    <p class="section-label">Combat Record</p>
+    <h2 class="section-title">The Numbers</h2>
+    <div class="stats-grid reveal">
+      <div class="stat-card">
+        <div class="stat-icon">⚔️</div>
+        <div class="stat-value">LT4</div>
+        <div class="stat-label">Sword Rank</div>
+        <div class="stat-desc">Top 4 swordsman — one of the sharpest blades on the entire Italian Mapping server.</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-value">LT4</div>
+        <div class="stat-label">CQTY Rank</div>
+        <div class="stat-desc">CQTY élite. Close-quarters, no room to breathe, no chance to escape.</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🌍</div>
+        <div class="stat-value">#1</div>
+        <div class="stat-label">IT Mapping</div>
+        <div class="stat-desc">Undisputed best PvPer in Italian Mapping's planet. The title isn't debated.</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🎮</div>
+        <div class="stat-value">lox</div>
+        <div class="stat-label">IGN: Tr1angleTo4st</div>
+        <div class="stat-desc">The alias carries weight. If you see it in the tab list, adjust your strategy accordingly.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ABOUT ══ -->
+<section>
+  <div class="about-section">
+    <p class="section-label">Profile</p>
+    <h2 class="section-title">About lox</h2>
+    <div class="about-grid reveal">
+      <div class="about-bio">
+        <p>
+          Known in-game as <strong>Tr1angleTo4st</strong>, <span class="highlight">lox</span> has carved out a reputation that precedes him on every server he joins. Within the Italian Mapping community, the name is synonymous with peak PvP performance.
+        </p>
+        <p>
+          Holding <strong>LT4 in both Sword and CQTY</strong>, lox doesn't just compete at the top level — he defines it. His playstyle is precise, calculated, and ruthless in execution. No wasted clicks. No second guesses.
+        </p>
+        <p>
+          If Italian Mapping has a best player, the answer has been the same for a while now: <span class="highlight">lox</span>.
+        </p>
+      </div>
+
+      <div class="skill-bars">
+        <div class="skill-row">
+          <div class="skill-top">
+            <span class="skill-name">Sword PvP</span>
+            <span class="skill-rank">LT4 · ELITE</span>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" style="width:96%"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-top">
+            <span class="skill-name">CQTY</span>
+            <span class="skill-rank">LT4 · ELITE</span>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" style="width:94%"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-top">
+            <span class="skill-name">Game Sense</span>
+            <span class="skill-rank">PEAK</span>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" style="width:98%"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-top">
+            <span class="skill-name">Clutch Factor</span>
+            <span class="skill-rank">GODLIKE</span>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" style="width:99%"></div></div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-top">
+            <span class="skill-name">Positioning</span>
+            <span class="skill-rank">MASTER</span>
+          </div>
+          <div class="bar-bg"><div class="bar-fill" style="width:92%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ ACHIEVEMENTS ══ -->
+<section class="achievements-section">
+  <div class="ach-inner">
+    <p class="section-label">Milestones</p>
+    <h2 class="section-title">Achievements</h2>
+    <div class="ach-list reveal">
+      <div class="ach-item">
+        <div class="ach-icon">⚔️</div>
+        <div class="ach-text">
+          <div class="ach-title">LT4 Sword</div>
+          <div class="ach-desc">Reached top 4 in Sword PvP — one of the hardest rankings to achieve on Italian Mapping.</div>
+        </div>
+      </div>
+      <div class="ach-item">
+        <div class="ach-icon">🎯</div>
+        <div class="ach-text">
+          <div class="ach-title">LT4 CQTY</div>
+          <div class="ach-desc">Dominated close-quarters combat and cemented a top-4 spot in the CQTY ladder.</div>
+        </div>
+      </div>
+      <div class="ach-item">
+        <div class="ach-icon">🌍</div>
+        <div class="ach-text">
+          <div class="ach-title">Planet's Best</div>
+          <div class="ach-desc">Recognized as the #1 PvPer across all of Italian Mapping's player base. The crown is his.</div>
+        </div>
+      </div>
+      <div class="ach-item">
+        <div class="ach-icon">💎</div>
+        <div class="ach-text">
+          <div class="ach-title">Dual Top-4 Titles</div>
+          <div class="ach-desc">Holding LT4 in two separate disciplines simultaneously — a feat few players ever achieve.</div>
+        </div>
+      </div>
+      <div class="ach-item">
+        <div class="ach-icon">👑</div>
+        <div class="ach-text">
+          <div class="ach-title">Community Icon</div>
+          <div class="ach-desc">A player whose reputation travels ahead of him. "Tr1angleTo4st" in the tab list changes the game.</div>
+        </div>
+      </div>
+      <div class="ach-item">
+        <div class="ach-icon">🔥</div>
+        <div class="ach-text">
+          <div class="ach-title">Unmatched Consistency</div>
+          <div class="ach-desc">Not a one-time peak — lox performs at the highest level game after game, season after season.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div class="footer-name">lox</div>
+  <div class="footer-copy">Tr1angleTo4st · Italian Mapping · LT4 Sword · LT4 CQTY</div>
+</footer>
+
+<script>
+  // Reveal on scroll
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => observer.observe(el));
+
+  // Animate bar fills on load
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.querySelectorAll('.bar-fill').forEach(bar => {
+        const w = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => bar.style.width = w, 100);
+      });
+    }, 300);
+  });
+</script>
+
+</body>
+</html>
